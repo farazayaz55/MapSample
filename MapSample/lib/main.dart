@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:geocoding/geocoding.dart';
 import 'package:google_place/google_place.dart';
 import 'package:provider/provider.dart';
@@ -19,8 +21,12 @@ import 'package:google_maps_webservice/places.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'package:requests/requests.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 const kGoogleApiKey = "AIzaSyArtrJGGyuWasmlZ1rcmovSoCkl7zJWgIE";
+Set<Polyline> polylines = Set<Polyline>();
+List<LatLng> polylinecordinates = [];
+PolylinePoints polylinePoints = PolylinePoints();
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
@@ -148,6 +154,42 @@ class MapSampleState extends State<MapSample> {
       tilt: 59.440717697143555,
       zoom: 19.151926040649414);
 
+  void setPolylines() async {
+    print("Source lat is ");
+    print(_kGooglePlexMarker.position.latitude);
+    print("Source lang is :");
+    print(_kGooglePlexMarker.position.longitude);
+    print("Fast lat");
+    print(_fastMarker.position.latitude);
+    print("fast lang is ");
+    print(_fastMarker.position.longitude);
+
+    PolylineResult presult = await polylinePoints.getRouteBetweenCoordinates(
+        kGoogleApiKey,
+        PointLatLng(_kGooglePlexMarker.position.latitude,
+            _kGooglePlexMarker.position.longitude), //source
+        PointLatLng(
+            _fastMarker.position.latitude, _fastMarker.position.longitude));
+    if (presult.status == 'OK') {
+      print(
+          "OKOKOKOKOKOKOOKOKOKOKOKOKKOKOKO\nOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKO\nOKOKOKOKOKOKOKOKOKOKOOKOKOKOKOKOKOKOKKKOKOKOK");
+      presult.points.forEach((PointLatLng point) {
+        polylinecordinates.add(LatLng(point.latitude, point.longitude));
+      });
+      setState(() {
+        polylines.add(Polyline(
+          width: 8,
+          polylineId: PolylineId('PolyLine'),
+          color: Colors.blueGrey,
+          points: polylinecordinates,
+        ));
+      });
+    } else {
+      print(
+          "NOT\nOKOKOKOKOKOKOOKOKOKOKOKOKKOKOKO\nOKOKOKOKOKOKOKOKOKOKOKOKOKOKOKO\nOKOKOKOKOKOKOKOKOKOKOOKOKOKOKOKOKOKOKKKOKOKOK");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final applicationbloc = Provider.of<appbloc>(context);
@@ -188,10 +230,12 @@ class MapSampleState extends State<MapSample> {
                 child: GoogleMap(
                   onLongPress: addmarker,
                   markers: {_kGooglePlexMarker, _fastMarker},
+                  polylines: polylines,
                   mapType: MapType.normal,
                   initialCameraPosition: _kGooglePlex,
                   onMapCreated: (GoogleMapController controller) {
                     _controller.complete(controller);
+                    //  setPolylines();
                   },
                   myLocationEnabled: true, //for blue dot
                   circles: mycircles,
@@ -220,6 +264,8 @@ class MapSampleState extends State<MapSample> {
                         ),
                         onTap: () {
                           //make textfields null
+                          polylinecordinates = [];
+                          // setPolylines();
                           msgController.clear();
                           applicationbloc.setSelectedLocation(
                               applicationbloc.searchResults[index].placeId);
@@ -247,6 +293,8 @@ class MapSampleState extends State<MapSample> {
         position: pos, //hard coded for fast rn
       );
     });
+    polylinecordinates = [];
+    setPolylines();
   }
 
   Future<void> _goToTheLake() async {
@@ -255,6 +303,28 @@ class MapSampleState extends State<MapSample> {
     controller.animateCamera(CameraUpdate.newCameraPosition(_kLake));
   }
 
+  /*
+  double _coordinateDistance(lat1, lon1, lat2, lon2) {
+    var p = 0.017453292519943295;
+    var c = cos;
+    var a = 0.5 -
+        c((lat2 - lat1) * p) / 2 +
+        c(lat1 * p) * c(lat2 * p) * (1 - c((lon2 - lon1) * p)) / 2;
+    return 12742 * asin(sqrt(a));
+  }
+  Future<bool> CalculateDistance() async
+  {
+     double totalDistance = 0.0;
+
+      for (int i = 0; i < presult.length - 1; i++) {
+        totalDistance += _coordinateDistance(
+          presult[i].latitude,
+          presult[i].longitude,
+          presult[i + 1].latitude,
+          presult[i + 1].longitude,
+        );
+  }
+*/ //how to pass presult here just
   Future<void> _goToTheDestination(Place place) async {
     final GoogleMapController controller = await _controller.future;
     final CameraPosition destination = CameraPosition(
@@ -272,6 +342,8 @@ class MapSampleState extends State<MapSample> {
     );
     // so hum screen ko legae +
     //humne udhar marker bh rkhdia
+    polylinecordinates = [];
+    setPolylines();
   }
 
   @override

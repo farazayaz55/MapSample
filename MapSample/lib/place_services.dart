@@ -37,6 +37,7 @@ class PlaceService {
     String mapKey = "AIzaSyArtrJGGyuWasmlZ1rcmovSoCkl7zJWgIE";
     String autoCompleteUrl =
         "https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&key=$mapKey";
+    //  https://maps.googleapis.com/maps/api/directions/json?origin=Islamabad&destination=Lahore&key=AIzaSyArtrJGGyuWasmlZ1rcmovSoCkl7zJWgIE
 
     res = await http.get(Uri.parse(autoCompleteUrl));
 
